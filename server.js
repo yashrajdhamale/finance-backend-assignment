@@ -1,6 +1,6 @@
+require("dotenv").config();
 const express = require("express");
 const connectDB = require("./config/db");
-require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
 const recordRoutes = require("./routes/recordRoutes");
@@ -11,20 +11,27 @@ const checkActive = require("./middleware/checkActive");
 
 const app = express();
 
-connectDB();
-
 app.use(express.json());
 
+// middleware order ✅
+app.use(mockUser);
 app.use(checkActive);
 
-// TEMP user injection
-app.use(mockUser);
-
-// ROUTES
+// routes
 app.use("/users", userRoutes);
 app.use("/records", recordRoutes);
 app.use("/dashboard", dashboardRoutes);
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
-});
+// connect DB then start server ✅
+connectDB()
+  .then(() => {
+    console.log("DB Connected ✅");
+
+    app.listen(process.env.PORT || 3000, () => {
+      console.log(`Server running on port ${process.env.PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("DB connection failed ❌", err);
+    process.exit(1); // stop app if DB fails
+  });
